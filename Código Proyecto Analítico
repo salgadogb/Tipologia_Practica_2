@@ -1,0 +1,29 @@
+
+# PROYECTO ANALÍTICO en RStudio.
+# ------------------------------------
+
+# 0.- Acceder a la API de twitter
+# 1.- Descarga del data set
+# 2.- Limpieza de los datos
+# 3.- Análisis de los datos
+# 4.- Representación de los resultados
+
+
+# 0.- Acceder a la API de twitter
+# ------------------------------------
+
+# Cargar el paquete twitter en R .
+library(twitteR)
+
+# Cargar fichero externo conteniendo parámetros de acceso a twitter
+# El fichero contiene: consumer_key, consumer_secret, access_token y access_secret.
+source("twitter-auth.R")
+
+# Acceder y conectarse a la API de twitter.
+setup_twitter_oauth(Consumer_key, Consumer_secret, Access_token, Access_secret)
+
+ 
+ # 1.- Descarga del data set
+ # ------------------------------------
+ 
+tweets <- searchTwitter("#Feminismo", n=900)
