@@ -77,3 +77,83 @@ limpiarTweets = function(tweets)
 # 3.- Análisis de los datos
 # ------------------------------------
 
+# FUNCIÓN para clasificar palabras del texto del tweet, en 4 categorias: 
+  # mNeg <- muyNegativo, neg <- negativo, pos <- positivo y mPos <- muyPositivo.
+sentimientosScore <- function(frases, mNeg, neg, pos, mPos){
+  
+  # Inicializar.
+  scores_final <- matrix('', 0, 5)
+ 
+  # Devuelve una lista.
+  scores <- laply(frases, function(frase, mNeg, neg, pos, mPos){
+    frase_inicial <- frase
+   
+    # Limpieza de los datos eliminando los caracteres innecesarios.
+    frase = limpiarTweets(frase)
+    frase <- tolower(frase)
+    listaPalabras <- str_split(frase, '\\s+')
+    palabras <- unlist(listaPalabras)
+   
+    # Construye un vector con los emparejamientos (frase versus categorias)
+    mPosMatches <- match(palabras, mPos)
+    posMatches <- match(palabras, pos)
+    mNegMatches <- match(palabras, mNeg)
+    negMatches <- match(palabras, neg)
+   
+    # Suma las palabras por categorias
+    mPosMatches <- sum(!is.na(mPosMatches))
+    posMatches <- sum(!is.na(posMatches))
+    mNegMatches <- sum(!is.na(mNegMatches))
+    negMatches <- sum(!is.na(negMatches))
+    score <- c(mNegMatches, negMatches, posMatches, mPosMatches)
+   
+    # Incorpora los resultados agregando una linea a la tabla de puntuaciones
+    nlinea <- c(frase_inicial, score)
+    scores_final <- rbind(scores_final, nlinea)
+    return(scores_final)
+  }, mNeg, neg, pos, mPos)
+  return(scores)
+}
+
+
+# Cargar la lista de palabras valor. 
+afinn_list <- read.csv(file='LISTA-Palabras-Valor.txt', header=FALSE, stringsAsFactors=FALSE)
+names(afinn_list) <- c('palabra', 'score')
+afinn_list$palabra <- tolower(afinn_list$palabra)
+
+# categorizar las palabras en 4 categorías (de muy negativas a muy positivas).
+mNeg <- afinn_list$palabra[afinn_list$score==-5 | afinn_list$score==-4]
+neg <- c(afinn_list$palabra[afinn_list$score==-3 | afinn_list$score==-2 | afinn_list$score==-1])
+pos <- c(afinn_list$palabra[afinn_list$score==3 | afinn_list$score==2 | afinn_list$score==1])
+mPos <- c(afinn_list$palabra[afinn_list$score==5 | afinn_list$score==4])   
+
+# Calcular la puntuación de cada tweet
+tweetResultado <- as.data.frame(sentimientosScore(tweets_txt, mNeg, neg, pos, mPos))
+
+# Agregar dos nuevas columnas inicializadas.
+tweetResultado <- cbind(tweetResultado,0,'Neutro')
+
+# Dar normbre a las variables
+names(tweetResultado)<- c('texto',"muyNeg",'Neg','muyPos','Pos','Valor', 'Sentimiento')
+
+# Pasar a caracter y ponderar
+tweetResultado$Sentimiento <- as.character(tweetResultado$Sentimiento)
+tweetResultado$Valor <- (-5*as.numeric(tweetResultado$muyNeg) -2.5*as.numeric(tweetResultado$Neg) + 2.5*as.numeric(tweetResultado$Pos) +5*as.numeric(tweetResultado$muyPos))/(as.numeric(tweetResultado$muyNeg)+as.numeric(tweetResultado$Neg)+as.numeric(tweetResultado$muyPos)+as.numeric(tweetResultado$Pos))
+tweetResultado$Valor[is.nan(tweetResultado$Valor)] <- 0
+
+# Categorizar resultados en 4 categorías (de muy negativo a muy positivo).
+tweetResultado$Sentimiento[tweetResultado$Valor < -1] <- 'Muy Negativo'
+tweetResultado$Sentimiento[(tweetResultado$Valor >= -1) & (tweetResultado$Valor < 0)] <- 'Negativo'
+tweetResultado$Sentimiento[(tweetResultado$Valor <= 1) & (tweetResultado$Valor > 0)] <- 'Positivo'
+tweetResultado$Sentimiento[tweetResultado$Valor > 1] <- 'Muy Positivo'
+
+
+# 4.- Representación de los resultados
+# ------------------------------------
+
+# Creamos una tabla de frecuencias para los 4 sentimientos.
+conteo <- as.data.frame(table(tweetResultado$Sentimiento))
+
+# Representación de las valoraciones por sectores.
+colores = c("green", "red", "lightyellow", "lightgreen")
+pie(conteo$Freq, conteo$Var1, col = colores)
