@@ -47,17 +47,12 @@ dim(tweetsDF)[1]; dim(tweetsDF)[2]
 # Ver la totalidad de las variables
 names(tweetsDF)
 
+# Exportar data.frame ORIGINAL a un archivo .csv
+write.csv(tweetsDF, file="ORIGINAL-tweetsDF.csv")
+
 
 # 2.- Limpieza de los datos
 # ------------------------------------
-
-# Del total de variables del tweet, extraemos solo el campo $text.
-tweets_txt=sapply(tweets[1:500], function(x) x$getText())
-
-# Pasar la lista a data.frame y visualizarla
-tweets_txtDF <- as.data.frame(tweets_txt)
-View(tweets_txtDF)
-
 
 # FUNCIÓN limpiar tweets
 limpiarTweets = function(tweets)
@@ -72,6 +67,19 @@ limpiarTweets = function(tweets)
   tweets_lm <- gsub('\\d+', '', tweets_lm)
   return(tweets_lm)
 }
+
+# Del total de variables del tweet, extraemos solo el campo $text.
+tweets_txt=sapply(tweets[1:500], function(x) x$getText())
+
+# Ejecutar función limpiar tweets.
+tweets_txt <- limpiarTweets(tweets_txt)
+
+# Pasar la lista a data.frame y visualizarla
+tweets_txtDF <- as.data.frame(tweets_txt)
+View(tweets_txtDF)
+
+# Exportar data.frame con solo campo $text, tras limpiar datos, a un archivo .csv
+write.csv(tweets_txtDF, file="Texto.Limpio-tweets_txtDF.csv")
 
 
 # 3.- Análisis de los datos
@@ -89,7 +97,7 @@ sentimientosScore <- function(frases, mNeg, neg, pos, mPos){
     frase_inicial <- frase
    
     # Limpieza de los datos eliminando los caracteres innecesarios.
-    frase = limpiarTweets(frase)
+    frase <- limpiarTweets(frase)
     frase <- tolower(frase)
     listaPalabras <- str_split(frase, '\\s+')
     palabras <- unlist(listaPalabras)
