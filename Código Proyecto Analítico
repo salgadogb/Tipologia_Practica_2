@@ -88,9 +88,8 @@ write.csv(tweets_txtDF, file="2-Texto.limpio-tweets_txtDF.csv")
 # FUNCIÓN para clasificar palabras del texto del tweet, en 4 categorias: 
   # mNeg <- muyNegativo, neg <- negativo, pos <- positivo y mPos <- muyPositivo.
 sentimientosScore <- function(frases, mNeg, neg, pos, mPos){
-  
-
-# Inicializar.
+ 
+ # Inicializar.
   scores_final <- matrix('', 0, 5)
  
   # Devuelve una lista.
@@ -156,12 +155,17 @@ tweetResultado$Sentimiento[(tweetResultado$Valor >= -1) & (tweetResultado$Valor 
 tweetResultado$Sentimiento[(tweetResultado$Valor <= 1) & (tweetResultado$Valor > 0)] <- 'Positivo'
 tweetResultado$Sentimiento[tweetResultado$Valor > 1] <- 'Muy Positivo'
 
+# Exportar data.frame tweetResultado, a un archivo .csv
+write.csv(tweetResultado, file="2.2-tweet.Resultado.csv")
 
 # 4.- Representación de los resultados
 # ------------------------------------
 
 # Creamos una tabla de frecuencias: 4 sentimientos y neutro.
 conteo <- as.data.frame(table(tweetResultado$Sentimiento))
+
+# Representamos la tabla de frecuencias: 4 sentimientos y neutro.
+plot(table(tweetResultado$Sentimiento))
 
 # Exportar Rplot a un archivo .png
 png("3-Rplot.Sentimientos.png")
