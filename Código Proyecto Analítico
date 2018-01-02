@@ -35,7 +35,7 @@ setup_twitter_oauth(Consumer_key, Consumer_secret, Access_token, Access_secret)
 # ------------------------------------
 
 # Descargar la lista de tweets del tema de interés.
-tweets <- searchTwitter("#Feminismo", n=500, lang = "es")
+tweets <- searchTwitter("#Feminismo", n=1000, lang = "es")
 
 # Pasar la lista a data.frame y visualizarla
 tweetsDF <- twListToDF(tweets)
@@ -47,8 +47,8 @@ dim(tweetsDF)[1]; dim(tweetsDF)[2]
 # Ver la totalidad de las variables
 names(tweetsDF)
 
-# Exportar data.frame ORIGINAL a un archivo .csv
-write.csv(tweetsDF, file="ORIGINAL-tweetsDF.csv")
+# Exportar data.frame 1 ORIGINAL a un archivo .csv
+write.csv(tweetsDF, file="1-ORIGINAL-tweetsDF.csv")
 
 
 # 2.- Limpieza de los datos
@@ -69,7 +69,7 @@ limpiarTweets = function(tweets)
 }
 
 # Del total de variables del tweet, extraemos solo el campo $text.
-tweets_txt=sapply(tweets[1:500], function(x) x$getText())
+tweets_txt=sapply(tweets[1:1000], function(x) x$getText())
 
 # Ejecutar función limpiar tweets.
 tweets_txt <- limpiarTweets(tweets_txt)
@@ -79,7 +79,7 @@ tweets_txtDF <- as.data.frame(tweets_txt)
 View(tweets_txtDF)
 
 # Exportar data.frame con solo campo $text, tras limpiar datos, a un archivo .csv
-write.csv(tweets_txtDF, file="Texto.Limpio-tweets_txtDF.csv")
+write.csv(tweets_txtDF, file="2-Texto.limpio-tweets_txtDF.csv")
 
 
 # 3.- Análisis de los datos
