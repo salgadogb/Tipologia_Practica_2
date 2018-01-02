@@ -89,7 +89,8 @@ write.csv(tweets_txtDF, file="2-Texto.limpio-tweets_txtDF.csv")
   # mNeg <- muyNegativo, neg <- negativo, pos <- positivo y mPos <- muyPositivo.
 sentimientosScore <- function(frases, mNeg, neg, pos, mPos){
   
-  # Inicializar.
+
+# Inicializar.
   scores_final <- matrix('', 0, 5)
  
   # Devuelve una lista.
@@ -159,9 +160,14 @@ tweetResultado$Sentimiento[tweetResultado$Valor > 1] <- 'Muy Positivo'
 # 4.- Representación de los resultados
 # ------------------------------------
 
-# Creamos una tabla de frecuencias para los 4 sentimientos.
+# Creamos una tabla de frecuencias: 4 sentimientos y neutro.
 conteo <- as.data.frame(table(tweetResultado$Sentimiento))
 
+# Exportar Rplot a un archivo .png
+png("3-Rplot.Sentimientos.png")
+
 # Representación de las valoraciones por sectores.
-colores = c("green", "red", "lightyellow", "lightgreen")
+colores = c("red","green", "orange", "lightyellow","lightgreen")
 pie(conteo$Freq, conteo$Var1, col = colores)
+
+dev.off()
