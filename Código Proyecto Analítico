@@ -1,4 +1,4 @@
-
+# ------------------------------------
 # PROYECTO ANALÍTICO en RStudio.
 # ------------------------------------
 
@@ -15,9 +15,11 @@
 # ------------------------------------
 
 # Funciones recursivas, paquete twitter en R, manejo cadena caractéres.
+# biblioteca de gráficos interactivos.
 library(plyr)
 library(twitteR)
 library(stringr)
+library(highcharter)
 
 
 # 0.- Acceder a la API de twitter
@@ -34,15 +36,15 @@ setup_twitter_oauth(Consumer_key, Consumer_secret, Access_token, Access_secret)
 # 1.- Descargar el conjunto de datos
 # ------------------------------------
 
+# Número de tweets a descargar
+num.tweets <- 1000
+
 # Descargar la lista de tweets del tema de interés.
-tweets <- searchTwitter("#Feminismo", n=1000, lang = "es")
+tweets <- searchTwitter("#Feminismo", n=num.tweets, lang = "es")
 
 # Pasar la lista a data.frame y visualizarla
 tweetsDF <- twListToDF(tweets)
 View(tweetsDF)
-
-# Número de objetos y de variables
-dim(tweetsDF)[1]; dim(tweetsDF)[2]
 
 # Ver la totalidad de las variables
 names(tweetsDF)
@@ -69,17 +71,11 @@ limpiarTweets = function(tweets)
 }
 
 # Del total de variables del tweet, extraemos solo el campo $text.
-tweets_txt=sapply(tweets[1:1000], function(x) x$getText())
+tweets_txt=sapply(tweets[1:num.tweets], function(x) x$getText())
 
 # Ejecutar función limpiar tweets.
 tweets_txt <- limpiarTweets(tweets_txt)
 
-# Pasar la lista a data.frame y visualizarla
-tweets_txtDF <- as.data.frame(tweets_txt)
-View(tweets_txtDF)
-
-# Exportar data.frame con solo campo $text, tras limpiar datos, a un archivo .csv
-write.csv(tweets_txtDF, file="2-Texto.limpio-tweets_txtDF.csv")
 
 
 # 3.- Análisis de los datos
@@ -97,7 +93,6 @@ sentimientosScore <- function(frases, mNeg, neg, pos, mPos){
     frase_inicial <- frase
    
     # Limpieza de los datos eliminando los caracteres innecesarios.
-    frase <- limpiarTweets(frase)
     frase <- tolower(frase)
     listaPalabras <- str_split(frase, '\\s+')
     palabras <- unlist(listaPalabras)
@@ -119,21 +114,21 @@ sentimientosScore <- function(frases, mNeg, neg, pos, mPos){
     nlinea <- c(frase_inicial, score)
     scores_final <- rbind(scores_final, nlinea)
     return(scores_final)
+    
   }, mNeg, neg, pos, mPos)
-  return(scores)
+    return(scores)
 }
 
-
 # Cargar la lista de palabras valor. 
-afinn_list <- read.csv(file='LISTA-Palabras-Valor.txt', header=FALSE, stringsAsFactors=FALSE)
-names(afinn_list) <- c('palabra', 'score')
-afinn_list$palabra <- tolower(afinn_list$palabra)
+words_list <- read.csv(file='LISTA-Palabras-Sentimientos.txt', header=FALSE, stringsAsFactors=T)
+names(words_list) <- c('palabra', 'score')
+words_list$palabra <- tolower(words_list$palabra)
 
 # categorizar las palabras en 4 categorías (de muy negativas a muy positivas).
-mNeg <- afinn_list$palabra[afinn_list$score==-5 | afinn_list$score==-4]
-neg <- c(afinn_list$palabra[afinn_list$score==-3 | afinn_list$score==-2 | afinn_list$score==-1])
-pos <- c(afinn_list$palabra[afinn_list$score==3 | afinn_list$score==2 | afinn_list$score==1])
-mPos <- c(afinn_list$palabra[afinn_list$score==5 | afinn_list$score==4])   
+mNeg <- words_list$palabra[words_list$score==-5 | words_list$score==-4]
+neg <- c(words_list$palabra[words_list$score==-3 | words_list$score==-2 | words_list$score==-1])
+pos <- c(words_list$palabra[words_list$score==3 | words_list$score==2 | words_list$score==1])
+mPos <- c(words_list$palabra[words_list$score==5 | words_list$score==4])  
 
 # Calcular la puntuación de cada tweet
 tweetResultado <- as.data.frame(sentimientosScore(tweets_txt, mNeg, neg, pos, mPos))
@@ -156,7 +151,9 @@ tweetResultado$Sentimiento[(tweetResultado$Valor <= 1) & (tweetResultado$Valor >
 tweetResultado$Sentimiento[tweetResultado$Valor > 1] <- 'Muy Positivo'
 
 # Exportar data.frame tweetResultado, a un archivo .csv
-write.csv(tweetResultado, file="2.2-tweet.Resultado.csv")
+write.csv(tweetResultado, file="2-tweet.Resultado.csv")
+
+
 
 # 4.- Representación de los resultados
 # ------------------------------------
@@ -164,14 +161,33 @@ write.csv(tweetResultado, file="2.2-tweet.Resultado.csv")
 # Creamos una tabla de frecuencias: 4 sentimientos y neutro.
 conteo <- as.data.frame(table(tweetResultado$Sentimiento))
 
+# Exportar la tabla de frecuencias (conteo): 4 sentimientos y neutro CONTEO, a un archivo .csv
+write.csv(conteo, file="3-Tabla-Conteo-Sentimientos.csv")
+
 # Representamos la tabla de frecuencias: 4 sentimientos y neutro.
 plot(table(tweetResultado$Sentimiento))
 
 # Exportar Rplot a un archivo .png
-png("3-Rplot.Sentimientos.png")
+png("3.2-Rplot.Sentimientos.png")
 
 # Representación de las valoraciones por sectores.
 colores = c("red","green", "orange", "lightyellow","lightgreen")
 pie(conteo$Freq, conteo$Var1, col = colores)
 
 dev.off()
+
+# Gráfico por sectores con "highchart" file: 3-Rplot.Sentimientos.Feminismo
+sentimientos <- data.frame(nombre = c('Muy Negativo','Muy Positivo', 'Negativo', 'Neutro', 'Positivo'),
+                           Freq = c(conteo$Freq))
+
+hc_pie <- highchart(width = 600, height = 600) %>%
+  hc_title(text = "Distribución de Sentimientos - #Feminismo (1000 tweets)") %>%
+  hc_chart(type = "pie", options3d = list(enabled = TRUE, alpha = 35, beta =0)) %>%
+  hc_plotOptions(pie = list(depth = 55)) %>%
+  hc_add_series_labels_values(sentimientos$nombre, sentimientos$Freq)
+
+hc_pie
+
+
+
+
