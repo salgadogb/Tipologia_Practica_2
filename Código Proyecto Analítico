@@ -1,31 +1,45 @@
+# -------------------------------------------
+# PROYECTO ANALÍTICO en RStudio: #FEMINISMO
+# -------------------------------------------
+
+# 0.- Cargar librerías
+
+# 1.- Acceder a la API de twitter
+
+# 2.- Descargar el conjunto de datos
+
+# 3.- Limpieza de los datos
+
+# 4.- Análisis de los datos: 
+#     4.1.- Análisis de Sentimientos
+#     4.2.- Análisis estadísticos de los resultados
+
+# 5.- Representación de los resultados
+#     5.1.- Representación de las valoraciones por sectores
+#     5.2.- Gráfico dinámico: 'highchart'
+#     5.3.- Otros gráficos: histograma y boxplot.
+
+# 6.- Predicción de los resultados
+#     6.1.-  Machine Learning: 'RTexTools'
+#     6.2.-  Recta de regresión y nube de puntos
+
+
 # ------------------------------------
-# PROYECTO ANALÍTICO en RStudio.
+# 0.- Cargar librerías
 # ------------------------------------
 
-#     Cargar librerías
-
-# 0.- Acceder a la API de twitter
-# 1.- Descargar el conjunto de datos
-# 2.- Limpieza de los datos
-# 3.- Análisis de los datos
-# 4.- Representación de los resultados
-
-
-#   Cargar librerías
-# ------------------------------------
-
-# Funciones recursivas, paquete twitter en R, manejo cadena caractéres.
+# Funciones recursivas, paquete twitter en R, manejo cadena caractéres y 
 # biblioteca de gráficos interactivos.
 library(plyr)
 library(twitteR)
 library(stringr)
-library(highcharter)
 
 
-# 0.- Acceder a la API de twitter
+# ------------------------------------
+# 1.- Acceder a la API de twitter
 # ------------------------------------
 
-# Cargar fichero externo conteniendo parámetros de acceso a twitter:
+# Cargar fichero externo conteniendo los parámetros de acceso a twitter:
 # consumer_key, consumer_secret, access_token y access_secret.
 source("twitter-auth.R")
 
@@ -33,11 +47,12 @@ source("twitter-auth.R")
 setup_twitter_oauth(Consumer_key, Consumer_secret, Access_token, Access_secret)
 
 
-# 1.- Descargar el conjunto de datos
+# ------------------------------------
+# 2.- Descargar el conjunto de datos
 # ------------------------------------
 
 # Número de tweets a descargar
-num.tweets <- 1000
+num.tweets <- 2000
 
 # Descargar la lista de tweets del tema de interés.
 tweets <- searchTwitter("#Feminismo", n=num.tweets, lang = "es")
@@ -50,10 +65,12 @@ View(tweetsDF)
 names(tweetsDF)
 
 # Exportar data.frame 1 ORIGINAL a un archivo .csv
-write.csv(tweetsDF, file="1-ORIGINAL-tweetsDF.csv")
+write.csv(tweetsDF, file="1-tweetsDF-ORIGINAL.csv")
+#                         -----------------------
 
 
-# 2.- Limpieza de los datos
+# ------------------------------------
+# 3.- Limpieza de los datos
 # ------------------------------------
 
 # FUNCIÓN limpiar tweets
@@ -70,74 +87,79 @@ limpiarTweets = function(tweets)
   return(tweets_lm)
 }
 
-# Del total de variables del tweet, extraemos solo el campo $text.
+# Del total de variables del tweet, extraemos solo el campo $text en un vector.
 tweets_txt=sapply(tweets[1:num.tweets], function(x) x$getText())
 
-# Ejecutar función limpiar tweets.
+# Ejecutar función limpiar tweets campo $text.
 tweets_txt <- limpiarTweets(tweets_txt)
 
 
 
-# 3.- Análisis de los datos
 # ------------------------------------
+# 4.- Análisis de los datos
+# ------------------------------------
+#    -------------------------------
+#      4.1.- Análisis de Sentimientos
+#    -------------------------------
+
 
 # FUNCIÓN para clasificar palabras del texto del tweet, en 4 categorias: 
   # mNeg <- muyNegativo, neg <- negativo, pos <- positivo y mPos <- muyPositivo.
-sentimientosScore <- function(frases, mNeg, neg, pos, mPos){
- 
- # Inicializar.
+sentimientosScore <- function(frases, muyNeg, neg, pos, muyPos){
+  
+  # Inicializar.
   scores_final <- matrix('', 0, 5)
- 
+
   # Devuelve una lista.
-  scores <- laply(frases, function(frase, mNeg, neg, pos, mPos){
+  scores <- laply(frases, function(frase, muyNeg, neg, pos, muyPos){
     frase_inicial <- frase
-   
+
     # Limpieza de los datos eliminando los caracteres innecesarios.
     frase <- tolower(frase)
     listaPalabras <- str_split(frase, '\\s+')
     palabras <- unlist(listaPalabras)
    
     # Construye un vector con los emparejamientos (frase versus categorias)
-    mPosMatches <- match(palabras, mPos)
-    posMatches <- match(palabras, pos)
-    mNegMatches <- match(palabras, mNeg)
+    muyNegMatches <- match(palabras, muyNeg)
     negMatches <- match(palabras, neg)
-   
+    posMatches <- match(palabras, pos)
+    muyPosMatches <- match(palabras, muyPos)
+    
     # Suma las palabras por categorias
-    mPosMatches <- sum(!is.na(mPosMatches))
-    posMatches <- sum(!is.na(posMatches))
-    mNegMatches <- sum(!is.na(mNegMatches))
+    muyNegMatches <- sum(!is.na(muyNegMatches))
     negMatches <- sum(!is.na(negMatches))
-    score <- c(mNegMatches, negMatches, posMatches, mPosMatches)
+    posMatches <- sum(!is.na(posMatches))
+    muyPosMatches <- sum(!is.na(muyPosMatches))
+    score <- c(muyNegMatches, negMatches, posMatches, muyPosMatches)
    
     # Incorpora los resultados agregando una linea a la tabla de puntuaciones
     nlinea <- c(frase_inicial, score)
     scores_final <- rbind(scores_final, nlinea)
     return(scores_final)
     
-  }, mNeg, neg, pos, mPos)
-    return(scores)
+  }, muyNeg, neg, pos, muyPos)
+  return(scores)
 }
 
 # Cargar la lista de palabras valor. 
-words_list <- read.csv(file='LISTA-Palabras-Sentimientos.txt', header=FALSE, stringsAsFactors=T)
+words_list <- read.csv(file='LISTA-Palabras-Sentimientos.txt', header=F, stringsAsFactors=T)
 names(words_list) <- c('palabra', 'score')
 words_list$palabra <- tolower(words_list$palabra)
 
 # categorizar las palabras en 4 categorías (de muy negativas a muy positivas).
-mNeg <- words_list$palabra[words_list$score==-5 | words_list$score==-4]
+muyNeg <- c(words_list$palabra[words_list$score==-5 | words_list$score==-4])
 neg <- c(words_list$palabra[words_list$score==-3 | words_list$score==-2 | words_list$score==-1])
 pos <- c(words_list$palabra[words_list$score==3 | words_list$score==2 | words_list$score==1])
-mPos <- c(words_list$palabra[words_list$score==5 | words_list$score==4])  
+muyPos <- c(words_list$palabra[words_list$score==5 | words_list$score==4])   
 
 # Calcular la puntuación de cada tweet
-tweetResultado <- as.data.frame(sentimientosScore(tweets_txt, mNeg, neg, pos, mPos))
+tweetResultado <- as.data.frame(sentimientosScore(tweets_txt, muyNeg, neg, pos, muyPos))
 
 # Agregar dos nuevas columnas inicializadas.
 tweetResultado <- cbind(tweetResultado,0,'Neutro')
 
 # Dar normbre a las variables
-names(tweetResultado)<- c('texto',"muyNeg",'Neg','muyPos','Pos','Valor', 'Sentimiento')
+names(tweetResultado)<- c('texto','muyNeg','Neg','Pos','muyPos','Valor','Sentimiento')
 
 # Pasar a caracter y ponderar
 tweetResultado$Sentimiento <- as.character(tweetResultado$Sentimiento)
@@ -145,43 +167,66 @@ tweetResultado$Valor <- (-5*as.numeric(tweetResultado$muyNeg) -2.5*as.numeric(tw
 tweetResultado$Valor[is.nan(tweetResultado$Valor)] <- 0
 
 # Categorizar resultados en 4 categorías (de muy negativo a muy positivo).
-tweetResultado$Sentimiento[tweetResultado$Valor < -1] <- 'Muy Negativo'
-tweetResultado$Sentimiento[(tweetResultado$Valor >= -1) & (tweetResultado$Valor < 0)] <- 'Negativo'
-tweetResultado$Sentimiento[(tweetResultado$Valor <= 1) & (tweetResultado$Valor > 0)] <- 'Positivo'
-tweetResultado$Sentimiento[tweetResultado$Valor > 1] <- 'Muy Positivo'
+tweetResultado$Sentimiento[tweetResultado$Valor <= -1] <- 'Muy Negativo'
+tweetResultado$Sentimiento[(tweetResultado$Valor > -1) & (tweetResultado$Valor < 0)] <- 'Negativo'
+tweetResultado$Sentimiento[(tweetResultado$Valor < 1) & (tweetResultado$Valor > 0)] <- 'Positivo'
+tweetResultado$Sentimiento[tweetResultado$Valor >= 1] <- 'Muy Positivo'
 
 # Exportar data.frame tweetResultado, a un archivo .csv
 write.csv(tweetResultado, file="2-tweet.Resultado.csv")
-
-
-
-# 4.- Representación de los resultados
-# ------------------------------------
+#                               ---------------------
+View(tweetResultado)
 
 # Creamos una tabla de frecuencias: 4 sentimientos y neutro.
 conteo <- as.data.frame(table(tweetResultado$Sentimiento))
 
+
 # Exportar la tabla de frecuencias (conteo): 4 sentimientos y neutro CONTEO, a un archivo .csv
 write.csv(conteo, file="3-Tabla-Conteo-Sentimientos.csv")
+#                       -------------------------------
 
-# Representamos la tabla de frecuencias: 4 sentimientos y neutro.
-plot(table(tweetResultado$Sentimiento))
+#    ------------------------------------------------
+#      4.2.- Análisis estadísticos de los resultados
+#    ------------------------------------------------
 
-# Exportar Rplot a un archivo .png
-png("3.2-Rplot.Sentimientos.png")
+# Sumario de medidas: Min, Max, Cuantiles, Mediana y Media.
+summary(conteo$Freq)
+
+# Varianza y desviación estandar
+var(conteo$Freq); sd(conteo$Freq)
+
+# ---------------------------------------
+# 5.- Representación de los resultados
+# ---------------------------------------
+#    -----------------------------------------------------
+#    5.1.-Representación de las valoraciones por sectores.
+#    -----------------------------------------------------
+library (ggplot2)
+
+# A1) Exportar Rplot a un archivo .png
+png("3.2-Rplot.Sentimientos.Feminismo.png")
+#    ------------------------------------
 
 # Representación de las valoraciones por sectores.
-colores = c("red","green", "orange", "lightyellow","lightgreen")
-pie(conteo$Freq, conteo$Var1, col = colores)
+colores <-  c("red","green", "orange", "lightyellow","lightgreen")
+with(conteo, pie(conteo$Freq, conteo$Var1, main = "Distribución de Sentimientos - Feminismo (tweets)",col=colores))
 
+# A2) Exportar Rplot a un archivo .png
 dev.off()
 
+#    ---------------------------------------------
+#    5.2.-Representación dinámica: 'highchart'
+#    ---------------------------------------------
+
+library(highcharter)
+
 # Gráfico por sectores con "highchart" file: 3-Rplot.Sentimientos.Feminismo
+#                                            ------------------------------
 sentimientos <- data.frame(nombre = c('Muy Negativo','Muy Positivo', 'Negativo', 'Neutro', 'Positivo'),
                            Freq = c(conteo$Freq))
 
-hc_pie <- highchart(width = 600, height = 600) %>%
-  hc_title(text = "Distribución de Sentimientos - #Feminismo (1000 tweets)") %>%
+hc_pie <- highchart(width = 500, height = 500) %>%
+  hc_title(text = "Distribución de Sentimientos - Feminismo (tweets)") %>%
   hc_chart(type = "pie", options3d = list(enabled = TRUE, alpha = 35, beta =0)) %>%
   hc_plotOptions(pie = list(depth = 55)) %>%
   hc_add_series_labels_values(sentimientos$nombre, sentimientos$Freq)
@@ -189,5 +234,115 @@ hc_pie <- highchart(width = 600, height = 600) %>%
 hc_pie
 
 
+#     -------------------------------------------
+#     5.3.- Otros gráficos: histograma y boxplot.
+#     -------------------------------------------    
+
+# A1) Exportar Rplot a un archivo .png
+png("5.3.1-Hist.Feminismo.png")
+#   -------------------------
+
+# Otros gráficos: histograma y boxplot.
+hist(conteo$Freq)
+dev.off()
+
+# A2) Exportar Rplot a un archivo .png
+png("5.3.2-Boxplot.Feminismo.png")
+#      --------------------------
+boxplot(conteo$Freq)
+dev.off()
 
 
+
+# ------------------------------------
+# 6.- Predicción de los resultados
+# ------------------------------------   
+#     ------------------------------------
+#      6.1 Machine Learning: 'RTexTools'
+#     ------------------------------------
+
+# (Clasificación automática de texto mediante aprendizaje supervisado)
+
+library(RTextTools)
+library(e1071)
+library(SparseM)
+
+# Modelo de Predicciones
+tweets_ponderados <- tweetResultado[,c(1,7)]
+
+matrix <- create_matrix(tweets_ponderados[,1],minWordLength=4,language="spanish",
+                        maxWordLength=15, removeStopwords = F, removeNumbers = T, 
+                        removePunctuation=F, toLower=T, stemWords = F)
+        
+mat <- as.matrix(matrix)
+classifier <- naiveBayes(mat[1:(num.tweets*0.8)], as.factor(tweets_ponderados[1:(num.tweets*0.8),2]))
+
+# Función genérica para predicciones a partir de los resultados de ajuste del primer argumento.
+predicted <- predict(classifier, mat[(num.tweets*0.8):num.tweets]); predicted
+
+# Crea la tabla de predicción
+table(tweets_ponderados[(num.tweets*0.8):num.tweets,2], predicted)
+
+# Calcula la precisión de recuperación de los datos clasificados
+recall_accuracy(tweets_ponderados[(num.tweets*0.8):num.tweets,2], predicted)
+
+
+
+#   ----------------------------------------------------
+#    6.2.- Recta de regresión y nube de puntos
+#   ----------------------------------------------------
+
+# Tabla de sentimientos obtenida al consultar el hashtag #Feminismo un día más tarde
+Freq2 <- c(80,10,930,600,380)
+
+#Se crea un data frame nuevo que incorpora al anterior los resultados nuevos
+conteo2 <- cbind(conteo,Freq2)
+conteo2_df <- as.data.frame(conteo2)
+
+# Varianza, Covarianza y Correlación entre las variables Freq y Freq2.
+# Las puntuaciones de las variables corresponden a dos momentos: antes y despues
+# Antes: Resultados obtenidos el día 06/01/2018  y 
+# Despues: Resultados obtenidos el día 07/01/2018
+var(conteo2$Freq,conteo2$Freq2)
+cov(conteo2$Freq,conteo2$Freq2)
+cor(conteo2$Freq,conteo2$Freq2)
+
+# Hallamos la recta de regresión entre ambos resultados.
+# Obtenemos: pendiente de la recta, ordenada en el origen y coeficiente de determinación R2 
+RegModel.1 <- lm(formula=Freq~Freq2, data=conteo2)
+summary(RegModel.1)
+
+# Realizamos el gráfico de la nube de puntos de las dos variables con la recta de regresión
+plot(Freq~Freq2, data=conteo2)
+abline(lm(formula=Freq~Freq2, data=conteo2), col="red")
+
+
+# -------------------- FIN -----------------------
+
+#     ****  PROYECTO EN ESTUDIO ****
+
+#   ----------------------------------------------------
+#    6.3.- Modelos de Clasificación y Regresión: 'CARET'
+#   ----------------------------------------------------
+
+library(caret)
+library(lattice)
+
+# Para desarrollar y construir modelos predictivos 
+# Construir el set de datos
+setDatos <- data.frame(mat, Sentimiento = tweets_ponderados$Sentimiento,row.names=NULL,check.names = T,stringsAsFactors = default.stringsAsFactors())
+View(setDatos)
+
+# Crear partición: Parte-datos para entrenar y Parte-datos para testear.
+inTrain <- createDataPartition(y=setDatos, p = 0.8,list = F)
+View(inTrain)
+# Sub-sets de datos separados: para entrenar al 80% y para testear al 20%
+training <- setDatos[inTrain,]
+test <- setDatos[-inTrain,]
+
+# Modelado: método Bayes Ingenuo (o Naive Bayes)
+modelFit <- train( Sentimiento ~ ., data = training, method = "nb")
+View(modelFit)
+
+predictions <- predict(modelFit, newdata = test)
+View(predictions)
