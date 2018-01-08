@@ -21,7 +21,7 @@
 
 # 6.- Predicción de los resultados
 #     6.1.-  Machine Learning: 'RTexTools'
-#     6.2.-  Recta de regresión y nube de puntos
+#     6.2.-  Recta de regresión
 
 
 # ------------------------------------
@@ -289,21 +289,21 @@ recall_accuracy(tweets_ponderados[(num.tweets*0.8):num.tweets,2], predicted)
 
 
 #   ----------------------------------------------------
-#    6.2.- Recta de regresión y nube de puntos
+#    6.2.- Recta de regresión
 #   ----------------------------------------------------
 
 # Tabla de sentimientos obtenida al consultar el hashtag #Feminismo un día más tarde
-Freq2 <- c(80,10,930,600,380)
+Freq2 <- conteo_2$Freq
 
 #Se crea un data frame nuevo que incorpora al anterior los resultados nuevos
 conteo2 <- cbind(conteo,Freq2)
 conteo2_df <- as.data.frame(conteo2)
 
-# Varianza, Covarianza y Correlación entre las variables Freq y Freq2.
+# Varianza Freq2 y Covarianza y Correlación entre las variables Freq y Freq2
 # Las puntuaciones de las variables corresponden a dos momentos: antes y despues
 # Antes: Resultados obtenidos el día 06/01/2018  y 
 # Despues: Resultados obtenidos el día 07/01/2018
-var(conteo2$Freq,conteo2$Freq2)
+var(conteo2$Freq2)
 cov(conteo2$Freq,conteo2$Freq2)
 cor(conteo2$Freq,conteo2$Freq2)
 
