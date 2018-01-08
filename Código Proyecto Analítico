@@ -21,7 +21,7 @@
 
 # 6.- Predicción de los resultados
 #     6.1.-  Machine Learning: 'RTexTools'
-#     6.2.-  Recta de regresión
+#     6.2.-  Recta de regresión y Pruebas de normalidad
 
 
 # ------------------------------------
@@ -292,8 +292,12 @@ recall_accuracy(tweets_ponderados[(num.tweets*0.8):num.tweets,2], predicted)
 #    6.2.- Recta de regresión
 #   ----------------------------------------------------
 
-# Tabla de sentimientos obtenida al consultar el hashtag #Feminismo un día más tarde
-Freq2 <- conteo_2$Freq
+#Pruebas de normalidad
+library(normtest)
+
+# Tabla de sentimientos obtenida al consultar el hashtag #Feminismo un día más tarde.
+# Se facilitan los datos obtenidos para evitar cargarlos desde Github y sea más fácil la ejecucion
+Freq2 <- c(108,40,366,1111,375)
 
 #Se crea un data frame nuevo que incorpora al anterior los resultados nuevos
 conteo2 <- cbind(conteo,Freq2)
@@ -307,6 +311,32 @@ var(conteo2$Freq2)
 cov(conteo2$Freq,conteo2$Freq2)
 cor(conteo2$Freq,conteo2$Freq2)
 
+# Muestra los datos de frecuencias antes-despues
+head(conteo2$Freq); head(conteo2$Freq2)
+
+
+#   ----------------------------------------------------
+#Pruebas de Normalidad del Paquete “normtest”
+
+###Prueba de Geary###
+###Usa los valores acumulados muestrales, sus medias y desviaciones estándar.###
+geary.norm.test(conteo2$Freq)
+geary.norm.test(conteo2$Freq2)
+
+
+###Prueba de Kurtosis###
+kurtosis.norm.test(conteo2$Freq)
+kurtosis.norm.test(conteo2$Freq2)
+
+#   ----------------------------------------------------
+#Pruebas de Normalidad del Paquete básico de R.
+###Prueba de Shapiro-Wilk###
+###Es más poderosa cuando se compara con otras pruebas de normalidad cuando la muestra es pequeña.###
+shapiro.test(conteo2$Freq)
+shapiro.test(conteo2$Freq2)
+#   ----------------------------------------------------
+
+
 # Hallamos la recta de regresión entre ambos resultados.
 # Obtenemos: pendiente de la recta, ordenada en el origen y coeficiente de determinación R2 
 RegModel.1 <- lm(formula=Freq~Freq2, data=conteo2)
@@ -318,31 +348,3 @@ abline(lm(formula=Freq~Freq2, data=conteo2), col="red")
 
 
 # -------------------- FIN -----------------------
-
-#     ****  PROYECTO EN ESTUDIO ****
-
-#   ----------------------------------------------------
-#    6.3.- Modelos de Clasificación y Regresión: 'CARET'
-#   ----------------------------------------------------
-
-library(caret)
-library(lattice)
-
-# Para desarrollar y construir modelos predictivos 
-# Construir el set de datos
-setDatos <- data.frame(mat, Sentimiento = tweets_ponderados$Sentimiento,row.names=NULL,check.names = T,stringsAsFactors = default.stringsAsFactors())
-View(setDatos)
-
-# Crear partición: Parte-datos para entrenar y Parte-datos para testear.
-inTrain <- createDataPartition(y=setDatos, p = 0.8,list = F)
-View(inTrain)
-# Sub-sets de datos separados: para entrenar al 80% y para testear al 20%
-training <- setDatos[inTrain,]
-test <- setDatos[-inTrain,]
-
-# Modelado: método Bayes Ingenuo (o Naive Bayes)
-modelFit <- train( Sentimiento ~ ., data = training, method = "nb")
-View(modelFit)
-
-predictions <- predict(modelFit, newdata = test)
-View(predictions)
