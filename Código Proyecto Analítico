@@ -1,55 +1,23 @@
-# -------------------------------------------
 # PROYECTO ANALÍTICO en RStudio: #FEMINISMO
-# -------------------------------------------
+
 
 # 0.- Cargar librerías
 
-# 1.- Acceder a la API de twitter
-
-# 2.- Descargar el conjunto de datos
-
-# 3.- Limpieza de los datos
-
-# 4.- Análisis de los datos: 
-#     4.1.- Análisis de Sentimientos
-#     4.2.- Análisis estadísticos de los resultados
-
-# 5.- Representación de los resultados
-#     5.1.- Representación de las valoraciones por sectores
-#     5.2.- Gráfico dinámico: 'highchart'
-#     5.3.- Otros gráficos: histograma y boxplot.
-
-# 6.- Predicción de los resultados
-#     6.1.-  Machine Learning: 'RTexTools'
-#     6.2.-  Recta de regresión y Pruebas de normalidad
-
-
-# ------------------------------------
-# 0.- Cargar librerías
-# ------------------------------------
-
-# Funciones recursivas, paquete twitter en R, manejo cadena caractéres y 
-# biblioteca de gráficos interactivos.
 library(plyr)
 library(twitteR)
 library(stringr)
 
 
-# ------------------------------------
 # 1.- Acceder a la API de twitter
-# ------------------------------------
 
 # Cargar fichero externo conteniendo los parámetros de acceso a twitter:
-# consumer_key, consumer_secret, access_token y access_secret.
 source("twitter-auth.R")
 
 # Acceder y conectarse a la API de twitter.
 setup_twitter_oauth(Consumer_key, Consumer_secret, Access_token, Access_secret)
 
 
-# ------------------------------------
 # 2.- Descargar el conjunto de datos
-# ------------------------------------
 
 # Número de tweets a descargar
 num.tweets <- 2000
@@ -57,21 +25,14 @@ num.tweets <- 2000
 # Descargar la lista de tweets del tema de interés.
 tweets <- searchTwitter("#Feminismo", n=num.tweets, lang = "es")
 
-# Pasar la lista a data.frame y visualizarla
+# Pasar la lista a data.frame 
 tweetsDF <- twListToDF(tweets)
-View(tweetsDF)
-
-# Ver la totalidad de las variables
-names(tweetsDF)
 
 # Exportar data.frame 1 ORIGINAL a un archivo .csv
 write.csv(tweetsDF, file="1-tweetsDF-ORIGINAL.csv")
-#                         -----------------------
 
 
-# ------------------------------------
 # 3.- Limpieza de los datos
-# ------------------------------------
 
 # FUNCIÓN limpiar tweets
 limpiarTweets = function(tweets)
@@ -94,14 +55,7 @@ tweets_txt=sapply(tweets[1:num.tweets], function(x) x$getText())
 tweets_txt <- limpiarTweets(tweets_txt)
 
 
-
-# ------------------------------------
-# 4.- Análisis de los datos
-# ------------------------------------
-#    -------------------------------
-#      4.1.- Análisis de Sentimientos
-#    -------------------------------
-
+# 4.- Análisis de los datos: Análisis de Sentimientos
 
 # FUNCIÓN para clasificar palabras del texto del tweet, en 4 categorias: 
   # mNeg <- muyNegativo, neg <- negativo, pos <- positivo y mPos <- muyPositivo.
@@ -174,38 +128,22 @@ tweetResultado$Sentimiento[tweetResultado$Valor >= 1] <- 'Muy Positivo'
 
 # Exportar data.frame tweetResultado, a un archivo .csv
 write.csv(tweetResultado, file="2-tweet.Resultado.csv")
-#                               ---------------------
-View(tweetResultado)
 
 # Creamos una tabla de frecuencias: 4 sentimientos y neutro.
 conteo <- as.data.frame(table(tweetResultado$Sentimiento))
 
-
 # Exportar la tabla de frecuencias (conteo): 4 sentimientos y neutro CONTEO, a un archivo .csv
 write.csv(conteo, file="3-Tabla-Conteo-Sentimientos.csv")
-#                       -------------------------------
 
-#    ------------------------------------------------
-#      4.2.- Análisis estadísticos de los resultados
-#    ------------------------------------------------
 
-# Sumario de medidas: Min, Max, Cuantiles, Mediana y Media.
-summary(conteo$Freq)
-
-# Varianza y desviación estandar
-var(conteo$Freq); sd(conteo$Freq)
-
-# ---------------------------------------
 # 5.- Representación de los resultados
-# ---------------------------------------
-#    -----------------------------------------------------
+
 #    5.1.-Representación de las valoraciones por sectores.
-#    -----------------------------------------------------
+
 library (ggplot2)
 
 # A1) Exportar Rplot a un archivo .png
 png("3.2-Rplot.Sentimientos.Feminismo.png")
-#    ------------------------------------
 
 # Representación de las valoraciones por sectores.
 colores <-  c("red","green", "orange", "lightyellow","lightgreen")
@@ -214,14 +152,13 @@ with(conteo, pie(conteo$Freq, conteo$Var1, main = "Distribución de Sentimientos
 # A2) Exportar Rplot a un archivo .png
 dev.off()
 
-#    ---------------------------------------------
+
 #    5.2.-Representación dinámica: 'highchart'
-#    ---------------------------------------------
 
 library(highcharter)
 
 # Gráfico por sectores con "highchart" file: 3-Rplot.Sentimientos.Feminismo
-#                                            ------------------------------
+
 sentimientos <- data.frame(nombre = c('Muy Negativo','Muy Positivo', 'Negativo', 'Neutro', 'Positivo'),
                            Freq = c(conteo$Freq))
 
@@ -234,34 +171,7 @@ hc_pie <- highchart(width = 500, height = 500) %>%
 hc_pie
 
 
-#     -------------------------------------------
-#     5.3.- Otros gráficos: histograma y boxplot.
-#     -------------------------------------------    
-
-# A1) Exportar Rplot a un archivo .png
-png("5.3.1-Hist.Feminismo.png")
-#   -------------------------
-
-# Otros gráficos: histograma y boxplot.
-hist(conteo$Freq)
-dev.off()
-
-# A2) Exportar Rplot a un archivo .png
-png("5.3.2-Boxplot.Feminismo.png")
-#      --------------------------
-boxplot(conteo$Freq)
-dev.off()
-
-
-
-# ------------------------------------
-# 6.- Predicción de los resultados
-# ------------------------------------   
-#     ------------------------------------
-#      6.1 Machine Learning: 'RTexTools'
-#     ------------------------------------
-
-# (Clasificación automática de texto mediante aprendizaje supervisado)
+# 6.- Predicción de los resultados: Machine Learning: 'RTexTools'
 
 library(RTextTools)
 library(e1071)
@@ -287,13 +197,7 @@ table(tweets_ponderados[(num.tweets*0.8):num.tweets,2], predicted)
 recall_accuracy(tweets_ponderados[(num.tweets*0.8):num.tweets,2], predicted)
 
 
-
-#   ----------------------------------------------------
-#    6.2.- Recta de regresión
-#   ----------------------------------------------------
-
-#Pruebas de normalidad
-library(normtest)
+#    Recta de regresión
 
 # Tabla de sentimientos obtenida al consultar el hashtag #Feminismo un día más tarde.
 # Se facilitan los datos obtenidos para evitar cargarlos desde Github y sea más fácil la ejecucion
@@ -303,40 +207,6 @@ Freq2 <- c(108,40,366,1111,375)
 conteo2 <- cbind(conteo,Freq2)
 conteo2_df <- as.data.frame(conteo2)
 
-# Varianza Freq2 y Covarianza y Correlación entre las variables Freq y Freq2
-# Las puntuaciones de las variables corresponden a dos momentos: antes y despues
-# Antes: Resultados obtenidos el día 06/01/2018  y 
-# Despues: Resultados obtenidos el día 07/01/2018
-var(conteo2$Freq2)
-cov(conteo2$Freq,conteo2$Freq2)
-cor(conteo2$Freq,conteo2$Freq2)
-
-# Muestra los datos de frecuencias antes-despues
-head(conteo2$Freq); head(conteo2$Freq2)
-
-
-#   ----------------------------------------------------
-#Pruebas de Normalidad del Paquete “normtest”
-
-###Prueba de Geary###
-###Usa los valores acumulados muestrales, sus medias y desviaciones estándar.###
-geary.norm.test(conteo2$Freq)
-geary.norm.test(conteo2$Freq2)
-
-
-###Prueba de Kurtosis###
-kurtosis.norm.test(conteo2$Freq)
-kurtosis.norm.test(conteo2$Freq2)
-
-#   ----------------------------------------------------
-#Pruebas de Normalidad del Paquete básico de R.
-###Prueba de Shapiro-Wilk###
-###Es más poderosa cuando se compara con otras pruebas de normalidad cuando la muestra es pequeña.###
-shapiro.test(conteo2$Freq)
-shapiro.test(conteo2$Freq2)
-#   ----------------------------------------------------
-
-
 # Hallamos la recta de regresión entre ambos resultados.
 # Obtenemos: pendiente de la recta, ordenada en el origen y coeficiente de determinación R2 
 RegModel.1 <- lm(formula=Freq~Freq2, data=conteo2)
@@ -345,6 +215,3 @@ summary(RegModel.1)
 # Realizamos el gráfico de la nube de puntos de las dos variables con la recta de regresión
 plot(Freq~Freq2, data=conteo2)
 abline(lm(formula=Freq~Freq2, data=conteo2), col="red")
-
-
-# -------------------- FIN -----------------------
